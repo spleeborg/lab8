@@ -27,10 +27,79 @@ size_t Size(void* ptr)
 	return ((size_t*)ptr)[-1];
 }
 
+void merge(int arr[], int l, int m, int r)
+{
+    int i, j, k;
+    int n1 = m - l + 1;
+    int n2 =  r - m;
+
+    /* create temp arrays */
+    int *L = (int*) Alloc(n1*sizeof(int));
+    int *R = (int*) Alloc(n2*sizeof(int));
+
+    /* Copy data to temp arrays L[] and R[] */
+    for (i = 0; i < n1; i++)
+        L[i] = arr[l + i];
+    for (j = 0; j < n2; j++)
+        R[j] = arr[m + 1+ j];
+
+    /* Merge the temp arrays back into arr[l..r]*/
+    i = 0; // Initial index of first subarray
+    j = 0; // Initial index of second subarray
+    k = l; // Initial index of merged subarray
+    while (i < n1 && j < n2)
+    {
+        if (L[i] <= R[j])
+        {
+            arr[k] = L[i];
+            i++;
+        }
+        else
+        {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+
+    /* Copy the remaining elements of L[], if there
+       are any */
+    while (i < n1)
+    {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+
+    /* Copy the remaining elements of R[], if there
+       are any */
+    while (j < n2)
+    {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+    DeAlloc(L);
+    DeAlloc(R);
+}
+
 // implement merge sort
 // extraMemoryAllocated counts bytes of extra memory allocated
 void mergeSort(int pData[], int l, int r)
 {
+    if (l < r)
+    {
+        // get the mid point
+        int m = (l+r)/2;
+
+        // Sort first and second halves
+        mergeSort(pData, l, m);
+        mergeSort(pData, m+1, r);
+
+       // printf("Testing l=%d r=%d m=%d\n", l, r, m);
+
+        merge(pData, l, m, r);
+    }
 }
 
 // parses input file to an integer array
@@ -44,7 +113,7 @@ int parseData(char *inputFileName, int **ppData)
 	if (inFile)
 	{
 		fscanf(inFile,"%d\n",&dataSz);
-		*ppData = (int *)malloc(sizeof(int) * dataSz);
+		*ppData = (int *)Alloc(sizeof(int) * dataSz);
 		// Implement parse data block
 		if (*ppData == NULL)
 		{
@@ -67,9 +136,10 @@ int parseData(char *inputFileName, int **ppData)
 // prints first and last 100 items in the data array
 void printArray(int pData[], int dataSz)
 {
-	int i, sz = dataSz - 100;
+	int i, sz = (dataSz > 100 ? dataSz - 100 : 0);
+	int firstHundred = (dataSz < 100 ? dataSz : 100);
 	printf("\tData:\n\t");
-	for (i=0;i<100;++i)
+	for (i=0; i<firstHundred; ++i)
 	{
 		printf("%d ",pData[i]);
 	}
@@ -97,7 +167,7 @@ int main(void)
 		if (dataSz <= 0)
 			continue;
 		
-		pDataCopy = (int *)malloc(sizeof(int)*dataSz);
+		pDataCopy = (int *)Alloc(sizeof(int)*dataSz);
 	
 		printf("---------------------------\n");
 		printf("Dataset Size : %d\n",dataSz);
@@ -114,8 +184,8 @@ int main(void)
 		printf("\textra memory allocated\t: %d\n",extraMemoryAllocated);
 		printArray(pDataCopy, dataSz);
 		
-		free(pDataCopy);
-		free(pDataSrc);
+		DeAlloc(pDataCopy);
+		DeAlloc(pDataSrc);
 	}
 	
 }
